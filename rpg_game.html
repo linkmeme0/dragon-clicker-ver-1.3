@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Dragon RPG Clicker ver 1.3</title>
+    <style>
+        body {
+            background-color: #12121a;
+            color: #e2e2e9;
+            font-family: 'Courier New', Courier, monospace;
+            text-align: center;
+            padding: 20px;
+            user-select: none;
+        }
+        h1 {
+            color: #ffd700;
+            text-shadow: 0 0 10px rgba(255,215,0,0.4);
+            margin-bottom: 2px;
+        }
+        .version {
+            font-size: 14px;
+            color: #888;
+            margin-bottom: 15px;
+        }
+        .stat-box {
+            background: #1c1c28;
+            display: inline-flex;
+            gap: 20px;
+            padding: 12px 25px;
+            border-radius: 8px;
+            border: 2px solid #ffd700;
+            margin-bottom: 20px;
+            font-size: 18px;
+            font-weight: bold;
+        }
+        .grid {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            max-width: 1100px;
+            margin: 0 auto;
+            flex-wrap: wrap;
+        }
+        .panel {
+            background: #222232;
+            border: 2px solid #44445a;
+            border-radius: 12px;
+            padding: 20px;
+            flex: 1;
+            min-width: 300px;
+            position: relative;
+            box-shadow: 0 6px 12px rgba(0,0,0,0.3);
+        }
+        button {
+            background: #e67e22;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            padding: 12px 20px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 4px 0 #b35d15;
+            transition: all 0.05s;
+        }
+        button:active {
+            transform: translateY(3px);
+            box-shadow: 0 1px 0 #b35d15;
+        }
+        button:disabled {
+            background: #444 !important;
+            box-shadow: none !important;
+            cursor: not-allowed;
+            opacity: 0.5;
+        }
+        .shopkeeper {
+            background: #0f0f15;
+            border: 1px dashed #ffd700;
+            padding: 12px;
+            margin-bottom: 15px;
+            border-radius: 6px;
+            font-style: italic;
+            color: #ffeb3b;
+            min-height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .item {
+            background: #2d3e50;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 6px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            text-align: left;
+        }
+        .item-details {
+            max-width: 60%;
+        }
+        .boss-panel {
+            display: none;
+            background: #2d1a1a;
+            border-color: #c0392b;
+        }
+        .hp-bg {
+            background: #442222;
+            width: 100%;
+            height: 18px;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 10px 0;
+            border: 1px solid #773333;
+        }
+        .hp-fill {
+            background: #e74c3c;
+            width: 100%;
+            height: 100%;
+            transition: width 0.1s;
+        }
+        .shield-bg {
+            background: #223344;
+            width: 100%;
+            height: 14px;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 5px 0;
+            border: 1px solid #335577;
+        }
+        .shield-fill {
+            background: #3498db;
+            width: 100%;
+            height: 100%;
+            transition: width 0.1s;
+        }
+        .sprite {
+            font-size: 60px;
+            margin: 15px 0;
+            display: inline-block;
+            transition: transform 0.1s;
+        }
+        .msg {
+            position: absolute;
+            font-weight: bold;
+            font-size: 22px;
+            animation: popup 0.6s ease-out forwards;
+            pointer-events: none;
+            z-index: 10;
+            text-shadow: 1px 1px 2px black;
+        }
+        @keyframes popup {
+            0% { opacity: 1; transform: translateY(0) scale(1); }
+            100% { opacity: 0; transform: translateY(-50px) scale(1.3); }
+        }
+        .rebirth-btn {
+            background: #9b59b6;
+            box-shadow: 0 4px 0 #7d3c98;
+            display: none;
+            margin: 20px auto;
+            font-size: 20px;
+            padding: 15px 30px;
+        }
+        .sound-btn {
+            padding: 6px 14px;
+            font-size: 14px;
+            margin-bottom: 15px;
+            background: #3a3a52;
+            box-shadow: 0 3px 0 #22222f;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Dragon RPG Clicker</h1>
+    <div class="version">ver 1.3</div>
+    <button id="soundBtn" class="sound-btn">🔊 Sound: ON</button>
+
+    <div class="stat-box">
+        <div>Clicks: <span id="clicks" style="color:#00ffcc;">0</span></div>
+        <div>Coins: <span id="coins" style="color:#ffd700;">0</span> 💰</div>
+        <div>Rebirths: <span id="rebirths" style="color:#9b59b6;">0</span> ✨</div>
+    </div>
+
+    <div>
+        <button id="rebirthBtn" class="rebirth-btn">✨ PERFORM REBIRTH (Requires Dragon Defeated) ✨<br><span style="font-size:12px; font-weight:normal;">Resets progress for permanent +100% Coin Multiplier</span></button>
+    </div>
+
+    <div class="grid">
+        <!-- Resource Gathering Panel -->
+        <div class="panel" id="clickPanel">
+            <h3>Gather Resources</h3>
+            <div class="sprite">⛏️</div>
+            <br>
+            <button id="clickBtn">MINE COINS</button>
+            <div style="margin-top: 15px; text-align: left; font-size: 13px; line-height: 1.6;">
+                • Player Shield: <span id="playerShield">100</span>/100
+                <div class="shield-bg"><div id="shieldFill" class="shield-fill"></div></div>
+                <span style="color:#aaa; font-size:11px;">(Shield auto-regenerates when you click to mine!)</span>
+            </div>
+            <p id="progressionHint" style="font-size: 12px; color: #ffaa00; margin-top: 15px; font-weight: bold;">Next Encounter: Evil Wizard at 500 clicks!</p>
+        </div>
+
+        <!-- Shop Panel -->
+        <div class="panel" id="shopPanel">
+            <h3>The Merchant Outpost</h3>
+            <div id="merchantText" class="shopkeeper">"Welcome traveller... looking for fine gear?"</div>
+
+            <div class="item">
+                <div class="item-details"><strong>Iron Pickaxe</strong><br><small id="wpnTxt">+1 Coin per click</small></div>
+                <button id="buyWpn">Buy (15)</button>
+            </div>
+            <div class="item">
+                <div class="item-details"><strong>Goblins Hire</strong><br><small id="wrkTxt">+1 Coin per second</small></div>
+                <button id="buyWrk">Buy (50)</button>
+            </div>
+            <div class="item">
+                <div class="item-details"><strong>Combat Training</strong><br><small>+5% Crit Strike Chance</small></div>
+                <button id="buyCrit">Buy (150)</button>
+            </div>
+            <div class="item" id="staffItem" style="display:none; border: 1px solid #9b59b6;">
+                <div class="item-details"><strong style="color:#9b59b6;">⚡ Wizard Staff</strong><br><small>+15 Coins per click!</small></div>
+                <button id="buyStaff">Buy (400)</button>
+            </div>
+        </div>
+
+        <!-- Combat Panel -->
+        <div class="panel boss-panel" id="bossPanel">
+            <h3 id="bossTitle" style="color:#e74c3c; margin:0;">🔮 BOSS ENCOUNTER 🔮</h3>
+            <div class="sprite" id="bossPic">🧙‍♂️</div>
+            <div><strong id="bossName">Evil Wizard</strong> HP: <span id="hpText">500</span>/<span id="maxHpText">500</span></div>
+            <div class="hp-bg"><div id="hpFill" class="hp-fill"></div></div>
+            <button id="atkBtn" style="background:#c0392b; box-shadow:0 4px 0 #7e2217; width: 100%;">ATTACK ENEMY!</button>
+            <p id="bossStatus" style="font-size: 12px; color: #ff4444; margin-top:10px; font-style:italic;">The Wizard is preparing a spell...</p>
+        </div>
+    </div>
+
+    <script>
+        // ===== SOUND SYSTEM =====
+        let soundOn = true;
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+        function beep(freq, duration, type = "square", volume = 0.08, slideTo = null, delay = 0) {
+            if (!soundOn) return;
+            if (audioCtx.state === "suspended") audioCtx.resume();
+            const t = audioCtx.currentTime + delay;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = type;
+            osc.frequency.setValueAtTime(freq, t);
+            if (slideTo) osc.frequency.exponentialRampToValueAtTime(slideTo, t + duration);
+            gain.gain.setValueAtTime(volume, t);
+            gain.gain.exponentialRampToValueAtTime(0.001, t + duration);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start(t);
+            osc.stop(t + duration);
+        }
+
+        const sfx = {
+            mine:        () => beep(500, 0.08, "square", 0.06, 900),
+            hit:         () => beep(200, 0.12, "sawtooth", 0.1, 80),
+            crit:        () => { beep(300, 0.15, "sawtooth", 0.12, 1000); beep(900, 0.15, "square", 0.08, 1400, 0.05); },
+            buy:         () => { beep(700, 0.08, "triangle", 0.1); beep(1000, 0.12, "triangle", 0.1, null, 0.08); },
+            fail:        () => beep(150, 0.2, "square", 0.08, 100),
+            shieldHit:   () => beep(300, 0.1, "triangle", 0.1, 150),
+            shieldBreak: () => beep(250, 0.4, "sawtooth", 0.15, 40),
+            bossSpawn:   () => { beep(120, 0.5, "sawtooth", 0.15, 60); beep(90, 0.6, "square", 0.1, 40, 0.3); },
+            victory:     () => { [523, 659, 784, 1047].forEach((f, i) => beep(f, 0.2, "square", 0.1, null, i * 0.12)); },
+            rebirth:     () => beep(200, 1.0, "sine", 0.15, 1600)
+        };
+
+        // ===== GAME VARIABLES =====
+        let clicks = 0; let coins = 0; let power = 1; let miners = 0; let critChance = 5; let rebirthMultiplier = 1; let totalRebirths = 0;
+        let wpnCost = 15; let wrkCost = 50; let critCost = 150; let staffCost = 400; let hasStaff = false;
+
+        let playerMaxShield = 100; let playerShield = 100;
+        let currentBoss = "none";
+        let maxHp = 500; let hp = 500;
+        let enemyAttackPower = 8;
+        let enemyAttackTimer = null;
+
+        const welcomePhrases = [
+            '"Fine weather for questing! Have a look at my stock."',
+            '"Heard rumors of an Evil Wizard nearby... gear up!"',
+            '"The stronger your pickaxe, the harder you hit in battle!"',
+            '"Do not forget to keep clicking to recharge your shield!"'
+        ];
+        const buyPhrases = [
+            '"A masterpiece choice! That will serve you well."',
+            '"Pleasure doing business with you, hero!"',
+            '"Ah, excellent weapon balance. Feel that weight?"',
+            '"That upgrade will pay for itself in no time!"'
+        ];
+
+        function merchantSpeak(text) {
+            document.getElementById("merchantText").innerText = text;
+        }
+
+        function update() {
+            document.getElementById("clicks").innerText = clicks;
+            document.getElementById("coins").innerText = coins;
+            document.getElementById("rebirths").innerText = totalRebirths;
+            document.getElementById("playerShield").innerText = playerShield;
+            document.getElementById("shieldFill").style.width = (playerShield / playerMaxShield * 100) + "%";
+
+            document.getElementById("buyWpn").innerText = "Buy (" + wpnCost + ")";
+            document.getElementById("buyWrk").innerText = "Buy (" + wrkCost + ")";
+            document.getElementById("buyCrit").innerText = "Buy (" + critCost + ")";
+            if (!hasStaff) document.getElementById("buyStaff").innerText = "Buy (" + staffCost + ")";
+
+            if (clicks >= 500 && currentBoss === "none") {
+                spawnBoss("wizard");
+            } else if (clicks >= 1000 && currentBoss === "wizard_defeated") {
+                spawnBoss("dragon");
+            }
+
+            let hint = document.getElementById("progressionHint");
+            if (currentBoss === "none") hint.innerText = "Next Encounter: Evil Wizard at 500 clicks! (" + (500 - clicks) + " left)";
+            else if (currentBoss === "wizard") hint.innerText = "⚠️ DEFEAT THE WIZARD TO PROCEED!";
+            else if (currentBoss === "wizard_defeated") hint.innerText = "Next Encounter: Red Dragon at 1000 clicks! (" + (1000 - clicks) + " left)";
+            else if (currentBoss === "dragon") hint.innerText = "⚠️ THE DRAGON IS BURNING THE OUTPOST! SLAY IT!";
+            else if (currentBoss === "dragon_defeated") hint.innerText = "🎉 DRAGON SLAIN! You are ready to Rebirth!";
+        }
+
+        function pop(txt, id, color = "#ffd700") {
+            let p = document.getElementById(id);
+            if (!p) return;
+            let d = document.createElement("div");
+            d.className = "msg";
+            d.innerText = txt;
+            d.style.color = color;
+            d.style.left = (Math.random() * 40 + 30) + "%";
+            d.style.top = (Math.random() * 20 + 30) + "%";
+            p.appendChild(d);
+            setTimeout(() => d.remove(), 600);
+        }
+
+        function spawnBoss(type) {
+            currentBoss = type;
+            sfx.bossSpawn();
+            document.getElementById("bossPanel").style.display = "block";
+            clearInterval(enemyAttackTimer);
+
+            if (type === "wizard") {
+                maxHp = 600; hp = maxHp; enemyAttackPower = 10;
+                document.getElementById("bossPic").innerText = "🧙‍♂️";
+                document.getElementById("bossName").innerText = "Evil Wizard";
+                merchantSpeak('"By the stars! The Wizard approaches! He blocks your path!"');
+            } else if (type === "dragon") {
+                maxHp = 3500; hp = maxHp; enemyAttackPower = 22;
+                document.getElementById("bossPic").innerText = "🐉";
+                document.getElementById("bossName").innerText = "Ancient Onyx Dragon";
+                merchantSpeak('"THE DRAGON! The massive beast is here! Hit it with everything!"');
+            }
+
+            document.getElementById("hpText").innerText = hp;
+            document.getElementById("maxHpText").innerText = maxHp;
+            document.getElementById("hpFill").style.width = "100%";
+            enemyAttackTimer = setInterval(enemyAttack, 2000);
+        }
+
+        function enemyAttack() {
+            if (hp <= 0) return;
+            playerShield -= enemyAttackPower;
+            if (playerShield < 0) {
+                playerShield = 0;
+                let penalty = Math.round(coins * 0.1);
+                coins -= penalty;
+                playerShield = playerMaxShield;
+                pop("SHIELD BROKEN! Lost " + penalty + " 💰", "clickPanel", "#ff3333");
+                sfx.shieldBreak();
+                merchantSpeak('"Watch out! The monster broke through your defenses!"');
+            } else {
+                pop("-" + enemyAttackPower + " Shield", "clickPanel", "#3498db");
+                sfx.shieldHit();
+            }
+            update();
+        }
+
+        // ===== BUTTONS =====
+        document.getElementById("soundBtn").addEventListener("click", () => {
+            soundOn = !soundOn;
+            document.getElementById("soundBtn").innerText = soundOn ? "🔊 Sound: ON" : "🔇 Sound: OFF";
+        });
+
+        document.getElementById("clickBtn").addEventListener("click", () => {
+            clicks++;
+            let earned = power * rebirthMultiplier;
+            coins += earned;
+            if (playerShield < playerMaxShield) {
+                playerShield = Math.min(playerMaxShield, playerShield + 2);
+            }
+            pop("+" + earned, "clickPanel", "#ffd700");
+            sfx.mine();
+            if (Math.random() < 0.04) {
+                merchantSpeak(welcomePhrases[Math.floor(Math.random() * welcomePhrases.length)]);
+            }
+            update();
+        });
+
+        document.getElementById("atkBtn").addEventListener("click", () => {
+            if (hp <= 0) return;
+            let isCrit = Math.random() * 100 < critChance;
+            let dmg = power * 2;
+            let dmgColor = "#ff4444";
+            let txt = "-" + dmg;
+            if (isCrit) {
+                dmg = dmg * 3;
+                dmgColor = "#ffcc00";
+                txt = "💥 CRIT! -" + dmg;
+            }
+            hp -= dmg;
+            if (hp < 0) hp = 0;
+            pop(txt, "bossPanel", dmgColor);
+            if (isCrit) sfx.crit(); else sfx.hit();
+
+            let bPic = document.getElementById("bossPic");
+            bPic.style.transform = "scale(0.8) rotate(-15deg)";
+            setTimeout(() => bPic.style.transform = "scale(1) rotate(0deg)", 70);
+
+            document.getElementById("hpText").innerText = hp;
+            document.getElementById("hpFill").style.width = (hp / maxHp * 100) + "%";
+
+            if (hp <= 0) {
+                clearInterval(enemyAttackTimer);
+                if (currentBoss === "wizard") {
+                    currentBoss = "wizard_defeated";
+                    document.getElementById("bossPanel").style.display = "none";
+                    document.getElementById("staffItem").style.display = "flex";
+                    merchantSpeak('"Unbelievable! You struck down the Wizard! He dropped his Staff in the shop!"');
+                    sfx.victory();
+                    alert("Wizard Defeated! The Legendary Wizard Staff is now unlocked inside the Outpost!");
+                } else if (currentBoss === "dragon") {
+                    currentBoss = "dragon_defeated";
+                    document.getElementById("bossPic").innerText = "💀";
+                    document.getElementById("rebirthBtn").style.display = "block";
+                    merchantSpeak('"THE DRAGON IS DEAD! You are the true savior of the realm! Enter the Rebirth vortex!"');
+                    sfx.victory();
+                    alert("YOU SLAYED THE DRAGON! Permanent Rebirth is now unlocked at the top of the interface!");
+                }
+            }
+            update();
+        });
+
+        document.getElementById("buyWpn").addEventListener("click", () => {
+            if (coins >= wpnCost) {
+                sfx.buy();
+                coins -= wpnCost; power += 1;
+                wpnCost = Math.round(wpnCost * 1.5);
+                merchantSpeak(buyPhrases[Math.floor(Math.random() * buyPhrases.length)]);
+                update();
+            } else {
+                sfx.fail();
+                merchantSpeak('"You lack the currency! Go mine more gold."');
+            }
+        });
+
+        document.getElementById("buyWrk").addEventListener("click", () => {
+            if (coins >= wrkCost) {
+                sfx.buy();
+                coins -= wrkCost; miners += 1;
+                wrkCost = Math.round(wrkCost * 1.6);
+                merchantSpeak('"Ah, cheap labor! They will extract coins passively."');
+                update();
+            } else {
+                sfx.fail();
+                merchantSpeak('"No credit here, friend. Earn more coins first!"');
+            }
+        });
+
+        document.getElementById("buyCrit").addEventListener("click", () => {
+            if (coins >= critCost) {
+                sfx.buy();
+                coins -= critCost; critChance += 5;
+                critCost = Math.round(critCost * 1.8);
+                merchantSpeak('"Focusing your focus, eh? You will strike weak spots more often now."');
+                update();
+            } else {
+                sfx.fail();
+                merchantSpeak('"Honing combat skills is costly. Bring more coins."');
+            }
+        });
+
+        document.getElementById("buyStaff").addEventListener("click", () => {
+            if (coins >= staffCost && !hasStaff) {
+                sfx.buy();
+                coins -= staffCost; power += 15;
+                hasStaff = true;
+                document.getElementById("buyStaff").disabled = true;
+                document.getElementById("buyStaff").innerText = "OWNED";
+                merchantSpeak('"The raw arcane power inside this wand is immense... feel your clicks surge!"');
+                update();
+            } else {
+                sfx.fail();
+                merchantSpeak('"That ancient relic demands a flat price of 400 gold!"');
+            }
+        });
+
+        document.getElementById("rebirthBtn").addEventListener("click", () => {
+            if (currentBoss !== "dragon_defeated") return;
+            totalRebirths++;
+            sfx.rebirth();
+            rebirthMultiplier = 1 + totalRebirths;
+            clicks = 0; coins = 0; power = 1; miners = 0; critChance = 5;
+            wpnCost = 15; wrkCost = 50; critCost = 150; staffCost = 400; hasStaff = false;
+            playerShield = 100; currentBoss = "none";
+            document.getElementById("bossPanel").style.display = "none";
+            document.getElementById("bossPic").innerText = "🧙‍♂️";
+            document.getElementById("staffItem").style.display = "none";
+            document.getElementById("buyStaff").disabled = false;
+            document.getElementById("buyStaff").innerText = "Buy (400)";
+            document.getElementById("rebirthBtn").style.display = "none";
+            merchantSpeak('"The cosmic vortex turns... welcome back to the mortal realm, but stronger!"');
+            alert("Rebirth Complete! Permanent multiplier added!");
+            update();
+        });
+
+        setInterval(() => {
+            if (miners > 0) {
+                let generated = miners * rebirthMultiplier;
+                coins += generated;
+                pop("+" + generated, "clickPanel", "#00ffcc");
+                update();
+            }
+        }, 1000);
+
+        update();
+    </script>
+</body>
+</html>
